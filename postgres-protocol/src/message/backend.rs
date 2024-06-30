@@ -4,6 +4,7 @@ use byteorder::{BigEndian, ByteOrder, ReadBytesExt};
 use bytes::{Bytes, BytesMut};
 use fallible_iterator::FallibleIterator;
 use memchr::memchr;
+use std::borrow::Cow;
 use std::cmp;
 use std::io::{self, Read};
 use std::ops::Range;
@@ -633,7 +634,7 @@ impl<'a> FallibleIterator for ErrorFields<'a> {
         }
 
         let value_end = find_null(self.buf, 0)?;
-        let value = get_str(&self.buf[..value_end])?;
+        let value = String::from_utf8_lossy(&self.buf[..value_end]);
         self.buf = &self.buf[value_end + 1..];
 
         Ok(Some(ErrorField { type_, value }))
@@ -642,7 +643,7 @@ impl<'a> FallibleIterator for ErrorFields<'a> {
 
 pub struct ErrorField<'a> {
     type_: u8,
-    value: &'a str,
+    value: Cow<'a, str>,
 }
 
 impl<'a> ErrorField<'a> {
@@ -653,7 +654,7 @@ impl<'a> ErrorField<'a> {
 
     #[inline]
     pub fn value(&self) -> &str {
-        self.value
+        &self.value
     }
 }
 
