@@ -633,8 +633,14 @@ impl<'a> FallibleIterator for ErrorFields<'a> {
             }
         }
 
+        // We are lenient with UTF-8 parsing here because we cannot be certain
+        // that error messages coming from the database are always encoded as UTF-8
+        // (especially true early at connection startup, where postgres may
+        // respond in the host platform's native encoding).
+        // See https://github.com/sfackler/rust-postgres/issues/803
         let value_end = find_null(self.buf, 0)?;
         let value = String::from_utf8_lossy(&self.buf[..value_end]);
+
         self.buf = &self.buf[value_end + 1..];
 
         Ok(Some(ErrorField { type_, value }))
